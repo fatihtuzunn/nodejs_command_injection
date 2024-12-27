@@ -1,0 +1,38 @@
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const app = express();
+
+app.get('/read-log', (req, res) => {
+  const file = req.query.file || 'default.log';
+
+  // Specify the logs directory and sanitize the file path
+  const logsDirectory = path.join(__dirname, 'logs');
+  const sanitizedPath = path.resolve(logsDirectory, file);
+
+  console.log(`Resolved path: ${sanitizedPath}`); // Debugging log
+
+  // Ensure the path is within the logs directory
+  if (!sanitizedPath.startsWith(logsDirectory)) {
+    return res.status(400).send('Invalid file path.');
+  }
+
+  // Check if the file exists
+  fs.access(sanitizedPath, fs.constants.F_OK, (err) => {
+    if (err) {
+      return res.status(404).send('File not found.');
+    }
+
+    // Read and send the file content
+    fs.readFile(sanitizedPath, 'utf8', (err, data) => {
+      if (err) {
+        return res.status(500).send('Error reading the file.');
+      }
+      res.send(`<pre>${data}</pre>`);
+    });
+  });
+});
+
+app.listen(3000, () => {
+  console.log('Server is running at http://localhost:3000');
+});
